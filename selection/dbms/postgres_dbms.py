@@ -139,11 +139,14 @@ class PostgresDatabaseConnector(DatabaseConnector):
 
     def drop_indexes(self):
         logging.info("Dropping indexes")
-        stmt = "select indexname from pg_indexes where schemaname='public'"
+        stmt = "select indexname, indexdef, tablename from pg_indexes where schemaname='public'"
         indexes = self.exec_fetch(stmt, one=False)
         for index in indexes:
             index_name = index[0]
             drop_stmt = "drop index {}".format(index_name)
+            if "UNIQUE" in index[1]:
+                # XXX:This may affect correctness, but needed
+                drop_stmt = f"alter table {index[2]} drop constraint if exists {index_name} cascade"
             logging.debug("Dropping index {}".format(index_name))
             self.exec_only(drop_stmt)
 

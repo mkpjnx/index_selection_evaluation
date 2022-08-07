@@ -8,7 +8,9 @@ from .workload import Query
 
 
 class QueryGenerator:
-    def __init__(self, benchmark_name, scale_factor, db_connector, query_ids, columns):
+    def __init__(
+            self, benchmark_name, scale_factor, db_connector, query_ids, columns,
+            explicit_query_file=None):
         self.scale_factor = scale_factor
         self.benchmark_name = benchmark_name
         self.db_connector = db_connector
@@ -16,34 +18,49 @@ class QueryGenerator:
         self.query_ids = query_ids
         # All columns in current database/schema
         self.columns = columns
+        self.explicit_query_file = explicit_query_file
 
         self.generate()
 
     def filter_queries(self, query_ids):
-        self.queries = [query for query in self.queries if query.nr in query_ids]
+        self.queries = [
+            query for query in self.queries if query.nr in query_ids]
 
     def add_new_query(self, query_id, query_text):
         if not self.db_connector:
             logging.info("{}:".format(self))
             logging.error("No database connector to validate queries")
             raise Exception("database connector missing")
-        query_text = self.db_connector.update_query_text(query_text)
+        # query_text = self.db_connector.update_query_text(query_text)
         query = Query(query_id, query_text)
-        self._validate_query(query)
+        if not self._validate_query(query):
+            return
         self._store_indexable_columns(query)
         self.queries.append(query)
 
     def _validate_query(self, query):
         try:
             self.db_connector.get_plan(query)
+            return True
         except Exception as e:
             self.db_connector.rollback()
-            logging.error("{}: {}".format(self, e))
+            logging.error(f"{e}: invalid plan for \"{query.text}\"")
+            return False
 
     def _store_indexable_columns(self, query):
+        qtext = query.text.lower()
         for column in self.columns:
-            if column.name in query.text:
+            if column.name.lower() in qtext:
                 query.columns.append(column)
+
+    def _generate_custom(self):
+        logging.info("Reading custom CSV Queries")
+        with open(self.explicit_query_file) as f:
+            for ind, line in enumerate(f.readlines()):
+                # if line[:len("SELECT")] != "SELECT":
+                if line == "\n":
+                    continue
+                self.add_new_query(ind, line.strip())
 
     def _generate_tpch(self):
         logging.info("Generating TPC-H Queries")
@@ -154,5 +171,7 @@ class QueryGenerator:
                 self.make_command.append("OS=MACOS")
 
             self._generate_tpcds()
+        elif self.benchmark_name == "custom":
+            self._generate_custom()
         else:
             raise NotImplementedError("only tpch/tpcds implemented.")

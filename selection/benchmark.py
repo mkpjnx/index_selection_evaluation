@@ -88,8 +88,8 @@ class Benchmark:
             "cost requests",
             "cache hits",
         ]
-        for query in self.workload.queries:
-            header.append("q" + str(query.nr))
+        # for query in self.workload.queries:
+        #     header.append("q" + str(query.nr))
         header.append("indexed columns")
         return ";".join(header)
 
@@ -125,7 +125,7 @@ class Benchmark:
             self.cost_requests,
             self.cache_hits,
         ]
-        csv_entry.extend(results)
+        # csv_entry.extend(results)
         csv_entry.append(sorted(self.indexes))
         self._append_to_csv(";".join([str(x) for x in csv_entry]))
 

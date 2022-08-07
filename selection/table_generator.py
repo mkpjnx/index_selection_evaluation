@@ -15,11 +15,13 @@ class TableGenerator:
         scale_factor,
         database_connector,
         explicit_database_name=None,
+        explicit_ddl_path=None
     ):
         self.scale_factor = scale_factor
         self.benchmark_name = benchmark_name
         self.db_connector = database_connector
         self.explicit_database_name = explicit_database_name
+        self.explicit_ddl_path = explicit_ddl_path
 
         self.database_names = self.db_connector.database_names()
         self.tables = []
@@ -45,16 +47,21 @@ class TableGenerator:
         filename = self.directory + "/" + self.create_table_statements_file
         with open(filename, "r") as file:
             data = file.read().lower()
-        create_tables = data.split("create table ")[1:]
-        for create_table in create_tables:
+        lines = data.split(";")[1:]
+        for ind, stmt in enumerate(lines):
+            if "create table" not in stmt:
+                continue
+            create_table = stmt.split("create table")[1].strip()
             splitted = create_table.split("(", 1)
+            print(ind, splitted[0])
             table = Table(splitted[0].strip())
             self.tables.append(table)
             # TODO regex split? ,[whitespace]\n
-            for column in splitted[1].split(",\n"):
+            for colind, column in enumerate(splitted[1].split(",\n")):
                 name = column.lstrip().split(" ", 1)[0]
-                if name == "primary":
+                if name == "primary" or name == "foreign":
                     continue
+                print(ind, colind, name)
                 column_object = Column(name)
                 table.add_column(column_object)
                 self.columns.append(column_object)
@@ -150,5 +157,7 @@ class TableGenerator:
                 and self.scale_factor != 0.001
             ):
                 raise Exception("Wrong TPCDS scale factor")
+        elif self.benchmark_name == "custom":
+            self.directory , self.create_table_statements_file = self.explicit_ddl_path
         else:
             raise NotImplementedError("only tpch/ds implemented.")

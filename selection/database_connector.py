@@ -50,6 +50,7 @@ class DatabaseConnector:
                     logging.error(e)
             elif "select" in query_statement or "SELECT" in query_statement:
                 return query_statement
+            return query_statement
 
     def simulate_index(self, index):
         self.simulated_indexes += 1

@@ -11,6 +11,7 @@ from .algorithms.db2advis_algorithm import DB2AdvisAlgorithm
 from .algorithms.dexter_algorithm import DexterAlgorithm
 from .algorithms.drop_heuristic_algorithm import DropHeuristicAlgorithm
 from .algorithms.extend_algorithm import ExtendAlgorithm
+from .algorithms.extend_filtered import ExtendFilteredAlgorithm
 from .algorithms.relaxation_algorithm import RelaxationAlgorithm
 from .benchmark import Benchmark
 from .dbms.hana_dbms import HanaDatabaseConnector
@@ -27,6 +28,7 @@ ALGORITHMS = {
     "dexter": DexterAlgorithm,
     "drop": DropHeuristicAlgorithm,
     "extend": ExtendAlgorithm,
+    "extend_filtered": ExtendFilteredAlgorithm,
     "relaxation": RelaxationAlgorithm,
     "no_index": NoIndexAlgorithm,
     "all_indexes": AllIndexesAlgorithm,
@@ -60,8 +62,13 @@ class IndexSelection:
     def _setup_config(self, config):
         dbms_class = DBMSYSTEMS[config["database_system"]]
         generating_connector = dbms_class(None, autocommit=True)
+        if "explicit_database_name" not in config:
+            config["explicit_database_name"] = None
+
         table_generator = TableGenerator(
-            config["benchmark_name"], config["scale_factor"], generating_connector
+            config["benchmark_name"], config["scale_factor"], generating_connector,
+            explicit_database_name=config["explicit_database_name"],
+            explicit_ddl_path=config["explicit_ddl_path"],
         )
         self.database_name = table_generator.database_name()
         self.database_system = config["database_system"]
@@ -69,12 +76,15 @@ class IndexSelection:
 
         if "queries" not in config:
             config["queries"] = None
+        if "explicit_query_file" not in config:
+            config["explicit_query_file"] = None
         query_generator = QueryGenerator(
             config["benchmark_name"],
             config["scale_factor"],
             self.db_connector,
             config["queries"],
             table_generator.columns,
+            config["explicit_query_file"]
         )
         self.workload = Workload(query_generator.queries)
 
@@ -159,6 +169,8 @@ class IndexSelection:
         logging.info(f"Running algorithm {config}")
         indexes = algorithm.calculate_best_indexes(self.workload)
         logging.info(f"Indexes found: {indexes}")
+        for index in indexes:
+            print(f"create index {index.index_idx()} on {index.table()} ({index.joined_column_names()});")
         what_if = algorithm.cost_evaluation.what_if
 
         cost_requests = (
