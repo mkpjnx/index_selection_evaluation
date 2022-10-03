@@ -1,0 +1,18 @@
+{
+    "database_system": "postgres",
+    "benchmark_name": "custom_tpcc",
+    "explicit_database_name": "peijingx",
+    "explicit_ddl_path": ["/home/peijingx/repos/noisepage-pilot/build/benchbase/src/main/resources/benchmarks/tpcc","ddl-postgres.sql"],
+    "explicit_query_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/tpcc_sample.sql",
+    "scale_factor": 1,
+    "algorithms": [
+        {"name": "extend","parameters": {"budget_MB": 100000,"max_index_width": [1,1,1,1,1,1,1,1,1,1]},"timeout": 300},
+        {"name": "extend","parameters": {"budget_MB": 100000,"max_index_width": [2,2,2,2,2,2,2,2,2,2]},"timeout": 300},
+        {"name": "extend","parameters": {"budget_MB": 100000,"max_index_width": [3,3,3,3,3,3,3,3,3,3]},"timeout": 300},
+        {"name": "extend","parameters": {"budget_MB": 100000,"max_index_width": [4,4,4,4,4,4,4,4,4,4]},"timeout": 300},
+        {"name": "extend_filtered","parameters": {"budget_MB": 100000,"max_index_width": [1,1,1,1,1,1,1,1,1,1],"candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpcc.json"},"timeout": 300},
+        {"name": "extend_filtered","parameters": {"budget_MB": 100000,"max_index_width": [2,2,2,2,2,2,2,2,2,2],"candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpcc.json"},"timeout": 300},
+        {"name": "extend_filtered","parameters": {"budget_MB": 100000,"max_index_width": [3,3,3,3,3,3,3,3,3,3],"candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpcc.json"},"timeout": 300},
+        {"name": "extend_filtered","parameters": {"budget_MB": 100000,"max_index_width": [4,4,4,4,4,4,4,4,4,4],"candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpcc.json"},"timeout": 300}
+    ]
+}

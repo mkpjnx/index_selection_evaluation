@@ -171,7 +171,7 @@ class QueryGenerator:
                 self.make_command.append("OS=MACOS")
 
             self._generate_tpcds()
-        elif self.benchmark_name == "custom":
+        elif "custom" in self.benchmark_name:
             self._generate_custom()
         else:
             raise NotImplementedError("only tpch/tpcds implemented.")

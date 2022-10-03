@@ -2,7 +2,7 @@ import logging
 import random
 import time
 
-from ..candidate_generation import candidates_per_query, syntactically_relevant_indexes
+from ..candidate_generation import candidates_per_query, make_filtered_gen, syntactically_relevant_indexes
 from ..selection_algorithm import DEFAULT_PARAMETER_VALUES, SelectionAlgorithm
 from ..utils import get_utilized_indexes, mb_to_b
 
@@ -44,10 +44,15 @@ class DB2AdvisAlgorithm(SelectionAlgorithm):
 
         # The chosen generator is similar to the original "BFI" and
         # uses all syntactically relevant indexes.
+        cand_gen = syntactically_relevant_indexes
+        if 'candidate_file' in self.parameters:
+            # Generate syntactically relevant candidates
+            cand_gen = make_filtered_gen(self.parameters['candidate_file'], self.parameters['max_index_width'])
+
         candidates = candidates_per_query(
             workload,
             self.parameters["max_index_width"],
-            candidate_generator=syntactically_relevant_indexes,
+            candidate_generator=cand_gen,
         )
         utilized_indexes, query_details = get_utilized_indexes(
             workload, candidates, self.cost_evaluation, True

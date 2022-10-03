@@ -23,6 +23,7 @@ class Benchmark:
         cost_requests,
         cache_hits,
         what_if=None,
+        seed=0
     ):
         self.workload = workload
         self.db_connector = db_connector
@@ -44,7 +45,7 @@ class Benchmark:
         self.scale_factor = global_config["scale_factor"]
         self.benchmark_name = global_config["benchmark_name"]
         self.db_system = global_config["database_system"]
-        self.seed = None
+        self.seed = seed
         if "seed" in global_config:
             self.seed = global_config["seed"]
 
@@ -71,22 +72,23 @@ class Benchmark:
 
     def _create_csv_header(self):
         header = [
-            "date",
-            "commit",
+            # "date",
+            # "commit",
             "algorithm name",
             "parameters",
-            "scale factor",
-            "benchmark name",
-            "db system",
+            # "scale factor",
+            # "benchmark name",
+            # "db system",
             "algorithm runtime",
             "algorithm cost time",
             "algorithm index creation time",
             "algorithm created #indexes",
             "#indexes",
             "index create time",
-            "memory consumption",
             "cost requests",
             "cache hits",
+            "memory consumption",
+            "cost estimate"
         ]
         # for query in self.workload.queries:
         #     header.append("q" + str(query.nr))
@@ -104,29 +106,33 @@ class Benchmark:
             self._write_query_plans(date, plans)
         commit_hash = self._git_hash()
         indexes_size = self.db_connector.indexes_size()
+        total_cost = sum(
+            [results[query_id]["Cost"] for query_id in range(len(self.workload.queries))]
+        )
         # see comment above
         if self.number_of_runs == 0:
             indexes_size = sum([index.estimated_size for index in self.indexes])
         csv_entry = [
-            date,
-            commit_hash,
+            # date,
+            # commit_hash,
             config["name"],
             config["parameters"],
-            self.scale_factor,
-            self.benchmark_name,
-            self.db_system,
+            # self.scale_factor,
+            # self.benchmark_name,
+            # self.db_system,
             self.calculation_time,
             self.cost_estimation_duration,
             self.index_simulation_duration,
             self.simulated_indexes,
             len(self.indexes),
             self.index_create_time,
-            indexes_size,
             self.cost_requests,
             self.cache_hits,
+            indexes_size,
+            total_cost,
         ]
         # csv_entry.extend(results)
-        csv_entry.append(sorted(self.indexes))
+        csv_entry.append(sorted([str(ind) for ind in self.indexes]))
         self._append_to_csv(";".join([str(x) for x in csv_entry]))
 
         with open(self.picklename, "ba") as file:

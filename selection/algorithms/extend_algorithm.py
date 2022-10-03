@@ -99,13 +99,16 @@ class ExtendAlgorithm(SelectionAlgorithm):
                     continue
                 new_combination = index_combination.copy()
                 # We don't replace, but del and append to keep track of the append order
-                del new_combination[position]
+                old_size = index_combination[position].estimated_size
+                old_index = index_combination[position]
+                new_combination.pop(position)
                 new_combination.append(new_index)
                 self._evaluate_combination(
                     new_combination,
                     best,
                     current_cost,
-                    index_combination[position].estimated_size,
+                    old_size,
+                    old_index
                 )
 
     def _get_candidates_within_budget(self, index_combination_size, candidates):
@@ -118,7 +121,7 @@ class ExtendAlgorithm(SelectionAlgorithm):
         return new_candidates
 
     def _evaluate_combination(
-        self, index_combination, best, current_cost, old_index_size=0
+        self, index_combination, best, current_cost, old_index_size=0, old_index=None
     ):
         cost = self.cost_evaluation.calculate_cost(
             self.workload, index_combination, store_size=True
@@ -128,9 +131,10 @@ class ExtendAlgorithm(SelectionAlgorithm):
         benefit = current_cost - cost
         new_index = index_combination[-1]
         new_index_size_difference = new_index.estimated_size - old_index_size
-        assert new_index_size_difference != 0, "Index size difference should not be 0!"
-
-        ratio = benefit / new_index_size_difference
+        # assert new_index_size_difference != 0, f"Index size difference should not be 0! ({new_index},{new_index.estimated_size})({old_index},{old_index_size})"
+        ratio = 0
+        if benefit != 0:
+            ratio = benefit / (new_index_size_difference + 0.000001)
 
         total_size = sum(index.estimated_size for index in index_combination)
 

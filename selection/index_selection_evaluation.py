@@ -4,6 +4,7 @@ import logging
 import pickle
 import sys
 import time
+import random
 
 from .algorithms.anytime_algorithm import AnytimeAlgorithm
 from .algorithms.auto_admin_algorithm import AutoAdminAlgorithm
@@ -13,6 +14,7 @@ from .algorithms.drop_heuristic_algorithm import DropHeuristicAlgorithm
 from .algorithms.extend_algorithm import ExtendAlgorithm
 from .algorithms.extend_filtered import ExtendFilteredAlgorithm
 from .algorithms.relaxation_algorithm import RelaxationAlgorithm
+from .algorithms.drop_filtered import DropFilteredAlgorithm
 from .benchmark import Benchmark
 from .dbms.hana_dbms import HanaDatabaseConnector
 from .dbms.postgres_dbms import PostgresDatabaseConnector
@@ -28,10 +30,11 @@ ALGORITHMS = {
     "dexter": DexterAlgorithm,
     "drop": DropHeuristicAlgorithm,
     "extend": ExtendAlgorithm,
-    "extend_filtered": ExtendFilteredAlgorithm,
     "relaxation": RelaxationAlgorithm,
     "no_index": NoIndexAlgorithm,
     "all_indexes": AllIndexesAlgorithm,
+    "extend_filtered": ExtendFilteredAlgorithm,
+    "drop_filtered": DropFilteredAlgorithm,
 }
 
 DBMSYSTEMS = {"postgres": PostgresDatabaseConnector, "hana": HanaDatabaseConnector}
@@ -103,6 +106,8 @@ class IndexSelection:
 
         # Set the random seed to obtain deterministic statistics (and cost estimations)
         # because ANALYZE (and alike) use sampling for large tables
+        seed = random.random()
+        self.db_connector.set_random_seed(seed)
         self.db_connector.create_statistics()
         self.db_connector.commit()
 
@@ -118,7 +123,7 @@ class IndexSelection:
             for algorithm_config_unfolded in configs:
                 start_time = time.time()
                 cfg = algorithm_config_unfolded
-                indexes, what_if, cost_requests, cache_hits = self._run_algorithm(cfg)
+                indexes, what_if, cost_requests, cache_hits = self._run_algorithm(cfg, seed=seed)
                 calculation_time = round(time.time() - start_time, 2)
                 benchmark = Benchmark(
                     self.workload,
@@ -160,10 +165,10 @@ class IndexSelection:
         if counter > 1:
             raise Exception("Too many parameter lists in config")
 
-    def _run_algorithm(self, config):
+    def _run_algorithm(self, config, seed=0):
         self.db_connector.drop_indexes()
         self.db_connector.commit()
-        self.setup_db_connector(self.database_name, self.database_system)
+        self.setup_db_connector(self.database_name, self.database_system, seed)
 
         algorithm = self.create_algorithm_object(config["name"], config["parameters"])
         logging.info(f"Running algorithm {config}")
@@ -201,8 +206,8 @@ class IndexSelection:
             if ".json" in argument:
                 return argument
 
-    def setup_db_connector(self, database_name, database_system):
+    def setup_db_connector(self, database_name, database_system, seed=0):
         if self.db_connector:
             logging.info("Create new database connector (closing old)")
             self.db_connector.close()
-        self.db_connector = DBMSYSTEMS[database_system](database_name)
+        self.db_connector = DBMSYSTEMS[database_system](database_name, seed=seed)

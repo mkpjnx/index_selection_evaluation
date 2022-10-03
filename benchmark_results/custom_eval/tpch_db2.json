@@ -1,0 +1,59 @@
+{
+    "database_system": "postgres",
+    "benchmark_name": "custom_tpch_mem",
+    "explicit_database_name": "peijingx_tpch10",
+    "explicit_ddl_path": ["/home/peijingx/repos/noisepage-pilot/build/benchbase/src/main/resources/benchmarks/tpch","ddl-postgres.sql"],
+    "explicit_query_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/tpch_sample.sql",
+    "scale_factor": 1,
+    "algorithms": [
+        {
+            "name": "db2advis",
+            "parameters": {
+                "try_variations_seconds": 0,
+                "budget_MB": [1000,2000,4000,8000,16000,32000],
+                "max_index_width": 4
+            },
+            "timeout": 300
+        },
+        {
+            "name": "db2advis",
+            "parameters": {
+                "try_variations_seconds": 0,
+                "max_index_width": 4,
+                "budget_MB": [1000,2000,4000,8000,16000,32000],
+                "candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpch_w.json"
+            },
+            "timeout": 300
+        },
+        {
+            "name": "db2advis",
+            "parameters": {
+                "try_variations_seconds": 0,
+                "max_index_width": 4,
+                "budget_MB": [1000,2000,4000,8000,16000,32000],
+                "candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpch_wg.json"
+            },
+            "timeout": 300
+        },
+        {
+            "name": "db2advis",
+            "parameters": {
+                "try_variations_seconds": 0,
+                "max_index_width": 4,
+                "budget_MB": [1000,2000,4000,8000,16000,32000],
+                "candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpch_ws.json"
+            },
+            "timeout": 300
+        },
+        {
+            "name": "db2advis",
+            "parameters": {
+                "try_variations_seconds": 0,
+                "max_index_width": 4,
+                "budget_MB": [1000,2000,4000,8000,16000,32000],
+                "candidate_file": "/home/peijingx/repos/noisepage-pilot/artifacts/action/actions_tpch_wgs.json"
+            },
+            "timeout": 300
+        }
+    ]
+}

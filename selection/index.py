@@ -19,8 +19,8 @@ class Index:
         return self.columns < other.columns
 
     def __repr__(self):
-        columns_string = ",".join(map(str, self.columns))
-        return f"I({columns_string})"
+        columns_string = ",".join([c.name for c in self.columns])
+        return f"Index {self.columns[0].table}({columns_string})"
 
     def __eq__(self, other):
         if not isinstance(other, Index):

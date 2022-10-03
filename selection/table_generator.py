@@ -61,7 +61,7 @@ class TableGenerator:
                 name = column.lstrip().split(" ", 1)[0]
                 if name == "primary" or name == "foreign":
                     continue
-                print(ind, colind, name)
+                print("\t", colind, name)
                 column_object = Column(name)
                 table.add_column(column_object)
                 self.columns.append(column_object)
@@ -157,7 +157,7 @@ class TableGenerator:
                 and self.scale_factor != 0.001
             ):
                 raise Exception("Wrong TPCDS scale factor")
-        elif self.benchmark_name == "custom":
+        elif "custom" in self.benchmark_name:
             self.directory , self.create_table_statements_file = self.explicit_ddl_path
         else:
             raise NotImplementedError("only tpch/ds implemented.")

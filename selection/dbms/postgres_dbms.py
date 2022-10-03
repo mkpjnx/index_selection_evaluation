@@ -7,7 +7,7 @@ from ..database_connector import DatabaseConnector
 
 
 class PostgresDatabaseConnector(DatabaseConnector):
-    def __init__(self, db_name, autocommit=False):
+    def __init__(self, db_name, autocommit=False, seed=0):
         DatabaseConnector.__init__(self, db_name, autocommit=autocommit)
         self.db_system = "postgres"
         self._connection = None
@@ -16,7 +16,7 @@ class PostgresDatabaseConnector(DatabaseConnector):
             self.db_name = "postgres"
         self.create_connection()
 
-        self.set_random_seed()
+        self.set_random_seed(seed)
 
         logging.debug("Postgres connector created: {}".format(db_name))
 
@@ -143,11 +143,13 @@ class PostgresDatabaseConnector(DatabaseConnector):
         indexes = self.exec_fetch(stmt, one=False)
         for index in indexes:
             index_name = index[0]
-            drop_stmt = "drop index {}".format(index_name)
+            drop_stmt = ""
             if "UNIQUE" in index[1]:
                 # XXX:This may affect correctness, but needed
-                drop_stmt = f"alter table {index[2]} drop constraint if exists {index_name} cascade"
+                drop_stmt += f"alter table {index[2]} drop constraint if exists {index_name} cascade;"
+                print(drop_stmt)
             logging.debug("Dropping index {}".format(index_name))
+            drop_stmt += "drop index if exists {};".format(index_name)
             self.exec_only(drop_stmt)
 
     # PostgreSQL expects the timeout in milliseconds

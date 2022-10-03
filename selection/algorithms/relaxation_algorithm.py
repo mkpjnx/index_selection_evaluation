@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from ..candidate_generation import candidates_per_query, syntactically_relevant_indexes
+from ..candidate_generation import candidates_per_query, make_filtered_gen, syntactically_relevant_indexes
 from ..index import Index, index_merge, index_split
 from ..selection_algorithm import DEFAULT_PARAMETER_VALUES, SelectionAlgorithm
 from ..utils import get_utilized_indexes, indexes_by_table, mb_to_b
@@ -46,10 +46,15 @@ class RelaxationAlgorithm(SelectionAlgorithm):
         logging.info("Calculating best indexes Relaxation")
 
         # Generate syntactically relevant candidates
+        cand_gen = syntactically_relevant_indexes
+        if 'candidate_file' in self.parameters:
+            # Generate syntactically relevant candidates
+            cand_gen = make_filtered_gen(self.parameters['candidate_file'], self.parameters['max_index_width'])
+
         candidates = candidates_per_query(
             workload,
             self.parameters["max_index_width"],
-            candidate_generator=syntactically_relevant_indexes,
+            candidate_generator=cand_gen,
         )
 
         # Obtain best (utilized) indexes per query
