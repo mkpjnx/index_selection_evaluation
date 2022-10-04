@@ -52,7 +52,7 @@ class IndexSelection:
     def run(self):
         """This is called when running `python3 -m selection`.
         """
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
         config_file = self._parse_command_line_args()
         if not config_file:
             config_file = self.default_config_file
@@ -63,8 +63,11 @@ class IndexSelection:
         self._run_algorithms(config_file)
 
     def _setup_config(self, config):
-        dbms_class = DBMSYSTEMS[config["database_system"]]
-        generating_connector = dbms_class(None, autocommit=True)
+        self.database_cargs = config["database_cargs"]
+        self.database_system = config["database_system"]
+
+        dbms_class = DBMSYSTEMS[self.database_system]
+        generating_connector = dbms_class(None, cargs = self.database_cargs, autocommit=True)
         if "explicit_database_name" not in config:
             config["explicit_database_name"] = None
 
@@ -73,9 +76,9 @@ class IndexSelection:
             explicit_database_name=config["explicit_database_name"],
             explicit_ddl_path=config["explicit_ddl_path"],
         )
+
         self.database_name = table_generator.database_name()
-        self.database_system = config["database_system"]
-        self.setup_db_connector(self.database_name, self.database_system)
+        self.setup_db_connector(self.database_name, self.database_system, self.database_cargs)
 
         if "queries" not in config:
             config["queries"] = None
@@ -168,14 +171,13 @@ class IndexSelection:
     def _run_algorithm(self, config, seed=0):
         self.db_connector.drop_indexes()
         self.db_connector.commit()
-        self.setup_db_connector(self.database_name, self.database_system, seed)
+        self.setup_db_connector(self.database_name, self.database_system, cargs = self.database_cargs, seed = seed)
 
         algorithm = self.create_algorithm_object(config["name"], config["parameters"])
         logging.info(f"Running algorithm {config}")
         indexes = algorithm.calculate_best_indexes(self.workload)
         logging.info(f"Indexes found: {indexes}")
-        for index in indexes:
-            print(f"create index {index.index_idx()} on {index.table()} ({index.joined_column_names()});")
+
         what_if = algorithm.cost_evaluation.what_if
 
         cost_requests = (
@@ -206,8 +208,8 @@ class IndexSelection:
             if ".json" in argument:
                 return argument
 
-    def setup_db_connector(self, database_name, database_system, seed=0):
+    def setup_db_connector(self, database_name, database_system, cargs, seed=0):
         if self.db_connector:
             logging.info("Create new database connector (closing old)")
             self.db_connector.close()
-        self.db_connector = DBMSYSTEMS[database_system](database_name, seed=seed)
+        self.db_connector = DBMSYSTEMS[database_system](database_name, cargs = cargs, seed=seed)

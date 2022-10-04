@@ -7,23 +7,24 @@ from ..database_connector import DatabaseConnector
 
 
 class PostgresDatabaseConnector(DatabaseConnector):
-    def __init__(self, db_name, autocommit=False, seed=0):
+    def __init__(self, db_name, autocommit=False, seed=0, cargs = {}):
         DatabaseConnector.__init__(self, db_name, autocommit=autocommit)
         self.db_system = "postgres"
         self._connection = None
 
         if not self.db_name:
             self.db_name = "postgres"
-        self.create_connection()
+        self.create_connection(cargs)
 
         self.set_random_seed(seed)
 
         logging.debug("Postgres connector created: {}".format(db_name))
 
-    def create_connection(self):
+    def create_connection(self, cargs):
         if self._connection:
             self.close()
-        self._connection = psycopg2.connect("dbname={}".format(self.db_name))
+        logging.info(cargs)
+        self._connection = psycopg2.connect(**cargs)
         self._connection.autocommit = self.autocommit
         self._cursor = self._connection.cursor()
 

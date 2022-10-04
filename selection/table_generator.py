@@ -45,6 +45,7 @@ class TableGenerator:
     def _read_column_names(self):
         # Read table and column names from 'create table' statements
         filename = self.directory + "/" + self.create_table_statements_file
+        logging.debug(f"Reading ddl file {filename}")
         with open(filename, "r") as file:
             data = file.read().lower()
         lines = data.split(";")[1:]
@@ -53,7 +54,7 @@ class TableGenerator:
                 continue
             create_table = stmt.split("create table")[1].strip()
             splitted = create_table.split("(", 1)
-            print(ind, splitted[0])
+            logging.debug(f"Table {ind:3d}:{splitted[0]}")
             table = Table(splitted[0].strip())
             self.tables.append(table)
             # TODO regex split? ,[whitespace]\n
@@ -61,7 +62,7 @@ class TableGenerator:
                 name = column.lstrip().split(" ", 1)[0]
                 if name == "primary" or name == "foreign":
                     continue
-                print("\t", colind, name)
+                logging.debug(f"\tColumn {colind:3d} {name}")
                 column_object = Column(name)
                 table.add_column(column_object)
                 self.columns.append(column_object)
