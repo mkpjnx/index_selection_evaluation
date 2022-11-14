@@ -12,7 +12,7 @@
     
     "benchmark_name": "custom_tpcc",
     "explicit_query_file": "{PATH TO SAMPLE OF WORKLOAD}.sql",
-    "recommendation_output_dir": "{DIRETORY TO OUTPUT SQL TO}",
+    "recommendation_output": "{FILE TO EXPORT SQL TO}",
 
     "scale_factor": 1,
     "algorithms": [

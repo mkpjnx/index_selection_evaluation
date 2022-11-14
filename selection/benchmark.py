@@ -149,7 +149,9 @@ class Benchmark:
         csv_entry.append(sorted([str(ind) for ind in self.indexes]))
         self._append_to_csv(";".join([str(x) for x in csv_entry]))
         
-        outfile = f"{self.global_config['recommendation_output_dir']}/{self.uuid}.sql"
+        outfile = f"{self.global_config['recommendation_output']}"\
+            if 'recommendation_output' in self.global_config\
+            else f"{self.results_dir}/{self.uuid}.sql"
         self._export_statements(outfile)
         logging.info(f"create statements exported to {outfile}")
         with open(self.picklename, "ba") as file:
@@ -235,5 +237,6 @@ class Benchmark:
             f"{self.config['name']}_{self.benchmark_name}"
             f"_{len(self.workload.queries)}"
         )
+        self.results_dir = f"benchmark_results"
         self.filename = f"benchmark_results/results_{identifier}_queries.csv"
         self.picklename = f"benchmark_results/indexes_{identifier}_queries.pickle"
