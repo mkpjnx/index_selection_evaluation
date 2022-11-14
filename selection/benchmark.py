@@ -6,6 +6,7 @@ import pickle
 import random
 import subprocess
 import time
+import uuid
 
 from .utils import s_to_ms
 
@@ -32,6 +33,8 @@ class Benchmark:
         self.number_of_runs = (
             config["number_of_actual_runs"] if "number_of_actual_runs" in config else 0
         )
+
+        self.uuid = uuid.uuid4().hex[:10]
         self.config = config
         self.calculation_time = calculation_time
         self.disable_output_files = disable_output_files
@@ -48,7 +51,7 @@ class Benchmark:
         self.seed = seed
         if "seed" in global_config:
             self.seed = global_config["seed"]
-
+        self.global_config = global_config
         self._set_filenames()
 
     def benchmark(self):
@@ -72,6 +75,7 @@ class Benchmark:
 
     def _create_csv_header(self):
         header = [
+            "uuid",
             # "date",
             # "commit",
             "algorithm name",
@@ -88,7 +92,7 @@ class Benchmark:
             "cost requests",
             "cache hits",
             "memory consumption",
-            "cost estimate"
+            "cost estimate",
         ]
         # for query in self.workload.queries:
         #     header.append("q" + str(query.nr))
@@ -98,6 +102,14 @@ class Benchmark:
     def _git_hash(self):
         githash = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
         return githash.decode("ascii").replace("\n", "")
+
+    def _export_statements(self, fname):
+        with open(fname, 'w+') as f:
+            f.writelines([
+                f"create index {index.index_idx()} "
+                f"on {index.table()} ({index.joined_column_names()});\n"
+                for index in self.indexes
+            ])
 
     def _store_results(self, results, plans):
         config = self.config
@@ -112,7 +124,9 @@ class Benchmark:
         # see comment above
         if self.number_of_runs == 0:
             indexes_size = sum([index.estimated_size for index in self.indexes])
+        
         csv_entry = [
+            self.uuid,
             # date,
             # commit_hash,
             config["name"],
@@ -134,7 +148,10 @@ class Benchmark:
         # csv_entry.extend(results)
         csv_entry.append(sorted([str(ind) for ind in self.indexes]))
         self._append_to_csv(";".join([str(x) for x in csv_entry]))
-
+        
+        outfile = f"{self.global_config['recommendation_output_dir']}/{self.uuid}.sql"
+        self._export_statements(outfile)
+        logging.info(f"create statements exported to {outfile}")
         with open(self.picklename, "ba") as file:
             pickle.dump(self.indexes, file)
 
